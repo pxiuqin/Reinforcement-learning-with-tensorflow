@@ -90,6 +90,17 @@ def rl():
             q_predict = q_table.loc[S, A]   #当前Q值
             if S_ != 'terminal':
                 #Rt+1 + gamma * Q(St+1,A`)  获取下状态的最大值Q值
+                '''
+                这里特殊说明下为什么是Max
+                现在At+1~mju(.|St)  主要是把Q策略转换到A策略上，这是off-policy的核心思路
+                那么A`~PI(.|St)  表示找出来的最好策略
+                那么PI(St+1)=argmaxQ(St+1,a`)  根据贪婪策略这个为最好值
+                所以Rt+1 + gamma * Q(St+1,A`)
+                =Rt+1 + gamma * Q(St+1,argmaxQ(St+1,a`))
+                =Rt+1 + gamma * maxQ(St+1,a`)   这里直接使用了最大值动作并且与当前策略即选取动作At时采用的策略无关
+                主要可以理解为maxQ(St+1,a`)记忆中的利益，表示在状态St+1中给出的最大效用，表示我要把这个最大效用提
+                前告诉给上一个状态，让他知道这个消息，这里gamma越大表示越重视以前的历史经验，越小表示只重视眼前利益
+                '''
                 q_target = R + GAMMA * q_table.iloc[S_, :].max()   # next state is not terminal
             else:
                 q_target = R     # next state is terminal 如果是结束了则为Reward
