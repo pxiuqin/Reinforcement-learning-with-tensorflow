@@ -17,16 +17,16 @@ from RL_brain import QLearningTable
 
 
 def update():
-    for episode in range(100):
+    for episode in range(100):  #给出了迭代的次数
         # initial observation
-        observation = env.reset()
+        observation = env.reset()   #初始化环境
 
         while True:
             # fresh env
             env.render()
 
             # RL choose action based on observation
-            action = RL.choose_action(str(observation))
+            action = RL.choose_action(str(observation))  #选择
 
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
@@ -46,8 +46,8 @@ def update():
     env.destroy()
 
 if __name__ == "__main__":
-    env = Maze()
-    RL = QLearningTable(actions=list(range(env.n_actions)))
+    env = Maze()  #先定义一个环境
+    RL = QLearningTable(actions=list(range(env.n_actions)))  #给出一个动作list
 
     env.after(100, update)
     env.mainloop()

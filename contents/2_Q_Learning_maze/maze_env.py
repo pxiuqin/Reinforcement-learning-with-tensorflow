@@ -2,13 +2,15 @@
 Reinforcement learning maze example.
 
 Red rectangle:          explorer.
-Black rectangles:       hells       [reward = -1].
-Yellow bin circle:      paradise    [reward = +1].
-All other states:       ground      [reward = 0].
+Black rectangles:       hells       [reward = -1].   地狱-1分
+Yellow bin circle:      paradise    [reward = +1].  天堂就+1分
+All other states:       ground      [reward = 0].  地面不得分
 
 This script is the environment part of this example. The RL is in RL_brain.py.
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
+
+maze是一个迷宫游戏：当前问题是，如何走能躲避black方块找到yellow小圈，白色的方块是随便可以走的
 """
 
 
@@ -21,7 +23,7 @@ else:
     import tkinter as tk
 
 
-UNIT = 40   # pixels
+UNIT = 40   # pixels  每个方格多大
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
 
@@ -29,19 +31,19 @@ MAZE_W = 4  # grid width
 class Maze(tk.Tk, object):
     def __init__(self):
         super(Maze, self).__init__()
-        self.action_space = ['u', 'd', 'l', 'r']
+        self.action_space = ['u', 'd', 'l', 'r']   #动作空间为上下左右
         self.n_actions = len(self.action_space)
         self.title('maze')
-        self.geometry('{0}x{1}'.format(MAZE_H * UNIT, MAZE_H * UNIT))
+        self.geometry('{0}x{1}'.format(MAZE_H * UNIT, MAZE_H * UNIT))   #给出一个位置
         self._build_maze()
 
     def _build_maze(self):
         self.canvas = tk.Canvas(self, bg='white',
                            height=MAZE_H * UNIT,
-                           width=MAZE_W * UNIT)
+                           width=MAZE_W * UNIT)  #画出白色的底色
 
         # create grids
-        for c in range(0, MAZE_W * UNIT, UNIT):
+        for c in range(0, MAZE_W * UNIT, UNIT):  #每次画UNIT大小的方格
             x0, y0, x1, y1 = c, 0, c, MAZE_H * UNIT
             self.canvas.create_line(x0, y0, x1, y1)
         for r in range(0, MAZE_H * UNIT, UNIT):
@@ -110,18 +112,18 @@ class Maze(tk.Tk, object):
 
         self.canvas.move(self.rect, base_action[0], base_action[1])  # move agent
 
-        s_ = self.canvas.coords(self.rect)  # next state
+        s_ = self.canvas.coords(self.rect)  # next state 给出下一个状态，这里的状态是一个方块的位置信息
 
         # reward function
-        if s_ == self.canvas.coords(self.oval):
+        if s_ == self.canvas.coords(self.oval):    #表示找到了
             reward = 1
             done = True
             s_ = 'terminal'
-        elif s_ in [self.canvas.coords(self.hell1), self.canvas.coords(self.hell2)]:
+        elif s_ in [self.canvas.coords(self.hell1), self.canvas.coords(self.hell2)]:  #到了地狱
             reward = -1
             done = True
             s_ = 'terminal'
-        else:
+        else:   #其他情况为空
             reward = 0
             done = False
 
@@ -144,5 +146,5 @@ def update():
 
 if __name__ == '__main__':
     env = Maze()
-    env.after(100, update)
+    env.after(100, update)   #做一个测试
     env.mainloop()
