@@ -10,12 +10,14 @@ This script is the environment part of this example.
 The RL is in RL_brain.py.
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
-"""
 
+这个和Q_Learning_maze中的环境是一样的
+"""
 
 import numpy as np
 import time
 import sys
+
 if sys.version_info.major == 2:
     import Tkinter as tk
 else:

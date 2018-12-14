@@ -17,7 +17,7 @@ def update():
         observation = env.reset()
 
         # RL choose action based on observation
-        action = RL.choose_action(str(observation))
+        action = RL.choose_action(str(observation))  #获取一个初始动作
 
         while True:
             # fresh env
@@ -27,14 +27,14 @@ def update():
             observation_, reward, done = env.step(action)
 
             # RL choose action based on next observation
-            action_ = RL.choose_action(str(observation_))
+            action_ = RL.choose_action(str(observation_))   #选择下一个动作
 
             # RL learn from this transition (s, a, r, s, a) ==> Sarsa
             RL.learn(str(observation), action, reward, str(observation_), action_)
 
             # swap observation and action
-            observation = observation_
-            action = action_
+            observation = observation_   #状态为下一个状态
+            action = action_   #动作为下一个动作（这个很重要，表示他一个亲历亲为的on-policy）
 
             # break while loop when end of this episode
             if done:
@@ -46,7 +46,7 @@ def update():
 
 if __name__ == "__main__":
     env = Maze()
-    RL = SarsaTable(actions=list(range(env.n_actions)))
+    RL = SarsaTable(actions=list(range(env.n_actions)))  #给定一个sarsa算法
 
     env.after(100, update)
     env.mainloop()
