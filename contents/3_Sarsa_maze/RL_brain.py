@@ -72,7 +72,7 @@ class SarsaTable(RL):
         self.check_state_exist(s_)
         q_predict = self.q_table.loc[s, a]
         if s_ != 'terminal':
-            #R + gamma * Q(St+1,At+1) - Q(St,At)   St+1表示下一个状态，At+1表示下一个状态对应的动作
+            #R + gamma * Q(St+1,At+1)  St+1表示下一个状态，At+1表示下一个状态对应的动作
             q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
         else:
             q_target = r  # next state is terminal
