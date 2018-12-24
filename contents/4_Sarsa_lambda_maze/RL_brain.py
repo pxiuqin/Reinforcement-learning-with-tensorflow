@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 
+# Sarsa_lambda是一种sarsa的提速方式，目的是在每个回合我们走了n步, 那我们就叫Sarsa(n).n被定义为lambda，原来的sarsa也就是sarsa(0)
 class RL(object):
     def __init__(self, action_space, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
         self.actions = action_space  # a list
