@@ -152,8 +152,8 @@ class DeepQNetwork:
     def plot_cost(self):
         import matplotlib.pyplot as plt
         plt.plot(np.arange(len(self.cost_his)), self.cost_his)
-        plt.ylabel('Cost')
-        plt.xlabel('training steps')
+        plt.ylabel('Cost')   #纵轴被定义为损失
+        plt.xlabel('training steps')  #横轴被定义为训练步数
         plt.show()
 
 if __name__ == '__main__':

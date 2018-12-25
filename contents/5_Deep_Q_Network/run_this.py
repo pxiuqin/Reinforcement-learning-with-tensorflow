@@ -4,6 +4,8 @@ from RL_brain import DeepQNetwork
 
 def run_maze():
     step = 0
+
+    #给定300个回合
     for episode in range(300):
         # initial observation
         observation = env.reset()

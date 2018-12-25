@@ -10,6 +10,8 @@ This script is the environment part of this example.
 The RL is in RL_brain.py.
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
+
+本环境和之前的示例是一致的，仍然是一个迷宫游戏
 """
 import numpy as np
 import time
@@ -28,8 +30,8 @@ class Maze(tk.Tk, object):
     def __init__(self):
         super(Maze, self).__init__()
         self.action_space = ['u', 'd', 'l', 'r']
-        self.n_actions = len(self.action_space)
-        self.n_features = 2
+        self.n_actions = len(self.action_space)   #给定动作空间大小
+        self.n_features = 2   #设置两个特征
         self.title('maze')
         self.geometry('{0}x{1}'.format(MAZE_H * UNIT, MAZE_H * UNIT))
         self._build_maze()

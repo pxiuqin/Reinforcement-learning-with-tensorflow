@@ -30,11 +30,11 @@ class DeepQNetwork:
             replace_target_iter=300,
             memory_size=500,
             batch_size=32,
-            e_greedy_increment=None,
+            e_greedy_increment=None,  #递增epsilon
             output_graph=False,
     ):
-        self.n_actions = n_actions
-        self.n_features = n_features
+        self.n_actions = n_actions   #传递动作
+        self.n_features = n_features  #传递过来的特征
         self.lr = learning_rate
         self.gamma = reward_decay
         self.epsilon_max = e_greedy
@@ -42,7 +42,7 @@ class DeepQNetwork:
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max   #给定epsilon-greedy值
 
         # total learning step
         self.learn_step_counter = 0
@@ -52,8 +52,8 @@ class DeepQNetwork:
 
         # consist of [target_net, evaluate_net]
         self._build_net()
-        t_params = tf.get_collection('target_net_params')
-        e_params = tf.get_collection('eval_net_params')
+        t_params = tf.get_collection('target_net_params')  #定义target_net
+        e_params = tf.get_collection('eval_net_params')   #定义eval_net
         self.replace_target_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
 
         self.sess = tf.Session()
@@ -123,14 +123,16 @@ class DeepQNetwork:
 
         self.memory_counter += 1
 
+    #选择动作
     def choose_action(self, observation):
         # to have batch dimension when feed into tf placeholder
         observation = observation[np.newaxis, :]
 
+        #给定一个随机情况，这里仍然使用epsilon-greedy来避免探索不足
         if np.random.uniform() < self.epsilon:
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
-            action = np.argmax(actions_value)
+            action = np.argmax(actions_value)  #找到最大的actions_value值
         else:
             action = np.random.randint(0, self.n_actions)
         return action
