@@ -20,8 +20,10 @@ def run_maze():
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
 
+            #得到新的转换过程后就存储到记忆网络中
             RL.store_transition(observation, action, reward, observation_)
 
+            #先有一个自己走的网络(自己积累的记忆)，然后开始学习
             if (step > 200) and (step % 5 == 0):
                 RL.learn()
 

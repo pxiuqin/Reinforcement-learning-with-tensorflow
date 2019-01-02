@@ -16,6 +16,7 @@ release.properties
 *.prefs
 *.settings/*
 *.log
+*.logs
 .project
 .classpath
 metastore_db
