@@ -6,6 +6,10 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 Tensorflow: 1.0
 gym: 0.8.0
+
+Double_DQN:
+
+其他情况和DNQ一致
 """
 
 import numpy as np
@@ -80,7 +84,7 @@ class DoubleDQN:
             c_names, n_l1, w_initializer, b_initializer = \
                 ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
-
+            # q_eval计算过程
             self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer)
 
         with tf.variable_scope('loss'):
@@ -92,7 +96,7 @@ class DoubleDQN:
         self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-
+            # q_next的计算过程
             self.q_next = build_layers(self.s_, c_names, n_l1, w_initializer, b_initializer)
 
     def store_transition(self, s, a, r, s_):
@@ -129,19 +133,22 @@ class DoubleDQN:
             sample_index = np.random.choice(self.memory_counter, size=self.batch_size)
         batch_memory = self.memory[sample_index, :]
 
+        # 这里需要计算q_eval4next是根据经验池中下一时刻状态s'输入到eval-net计算得到的q值，这个q值主要用来选择动作
         q_next, q_eval4next = self.sess.run(
             [self.q_next, self.q_eval],
             feed_dict={self.s_: batch_memory[:, -self.n_features:],    # next observation
                        self.s: batch_memory[:, -self.n_features:]})    # next observation
         q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features]})
 
-        q_target = q_eval.copy()
+        q_target = q_eval.copy()  #赋值
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         eval_act_index = batch_memory[:, self.n_features].astype(int)
         reward = batch_memory[:, self.n_features + 1]
 
+        # 如果是double Q的话需要根据刚刚计算的q_eval4next来选择动作，然后根据q_next来得到q值的
         if self.double_q:
+            # 得到最大值的动作下标
             max_act4next = np.argmax(q_eval4next, axis=1)        # the action that brings the highest value is evaluated by q_eval
             selected_q_next = q_next[batch_index, max_act4next]  # Double DQN, select q_next depending on above actions
         else:

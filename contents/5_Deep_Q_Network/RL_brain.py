@@ -35,6 +35,7 @@ tf.set_random_seed(1)
 
 
 # Deep Q Network off-policy
+# 实现参考/paper/DQN/key/Playing Atari with Deep Reinforcement learning.pdf
 class DeepQNetwork:
     def __init__(
             self,
@@ -113,6 +114,7 @@ class DeepQNetwork:
                 self.q_eval = tf.matmul(l1, w2) + b2
 
         with tf.variable_scope('loss'):
+            # Li(theta i)=square(yi-Q(s,a:theta i))    这里yi表示q_target, Q表示为q_eval, 希望q_target和q_eval越接近越好
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
         with tf.variable_scope('train'):
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
@@ -203,6 +205,8 @@ class DeepQNetwork:
         batch_index = np.arange(self.batch_size, dtype=np.int32)  #给定一个batch
         eval_act_index = batch_memory[:, self.n_features].astype(int)  #给定action的index，然后赋值
         reward = batch_memory[:, self.n_features + 1]  #给定reward的index，然后赋值
+
+        # q_target t=Rt+1 +gamma* max(Q(St+1,a;theta t))  我们根据状态s'选择动作a'的过程,以及估计Q(s',a')使用的是同一张Q值表
         q_target[batch_index, eval_act_index] = reward + self.gamma * np.max(q_next, axis=1)   #action的位置来给定新值，tensor中的值更新指定的内容
 
         """
