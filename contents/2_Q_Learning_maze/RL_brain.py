@@ -39,7 +39,7 @@ class QLearningTable:
         else:
             q_target = r  # next state is terminal
 
-        #Q(St,At)=Q(St,At)+lr* (R + gamma * Q(St+1,a) - Q(St,At))
+        #Q(St,At)=Q(St,At)+lr* ((R + gamma * Q(St+1,a)) - Q(St,At))
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
 
     def check_state_exist(self, state):

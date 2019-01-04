@@ -91,7 +91,7 @@ class DeepQNetwork:
     """
     def _build_net(self):
         # ------------------ build evaluate_net ------------------
-        # input  给定了多行两列的状态输入，用来接收observation
+        # input 给定了多行两列的状态输入，用来接收observation
         self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions],
                                        name='Q_target')  # for calculating loss，给定了多行4列的值，用来接收q_target的值
@@ -168,7 +168,7 @@ class DeepQNetwork:
     def learn(self):
         # check to replace target parameters   检查是否替换target_net参数
         if self.learn_step_counter % self.replace_target_iter == 0:  # 指定了替换参数的步数
-            self.sess.run(self.replace_target_op)
+            self.sess.run(self.replace_target_op)  #替换
             print('\ntarget_params_replaced\n')
 
         # sample batch memory from all memory，从memory中随机抽取出指定大小的记忆值，这里注意不是全部，只是指定的一个范围
