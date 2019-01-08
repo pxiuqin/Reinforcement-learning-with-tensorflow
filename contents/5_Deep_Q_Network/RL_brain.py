@@ -105,13 +105,13 @@ class DeepQNetwork:
             with tf.variable_scope('l1'):
                 w1 = tf.get_variable('w1', [self.n_features, n_l1], initializer=w_initializer, collections=c_names)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names)
-                l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
+                l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)   #计算一个损失
 
             # second layer. collections is used later when assign to target net
             with tf.variable_scope('l2'):
                 w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
                 b2 = tf.get_variable('b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-                self.q_eval = tf.matmul(l1, w2) + b2
+                self.q_eval = tf.matmul(l1, w2) + b2    #第二层生成一个evaluate_net
 
         with tf.variable_scope('loss'):
             # Li(theta i)=square(yi-Q(s,a:theta i))    这里yi表示q_target, Q表示为q_eval, 希望q_target和q_eval越接近越好
@@ -158,7 +158,7 @@ class DeepQNetwork:
 
         # 给定一个随机情况，这里仍然使用epsilon-greedy来避免探索不足
         if np.random.uniform() < self.epsilon:
-            # forward feed the observation and get q value for every actions
+            # forward feed the observation and get q value for every actions   feed_dict用来初始化网络的placeholder的tensor值
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})  # 从eval_net中生成所有action的值
             action = np.argmax(actions_value)  # 找到最大的actions_value值
         else:
@@ -182,8 +182,8 @@ class DeepQNetwork:
         q_next, q_eval = self.sess.run(
                 [self.q_next, self.q_eval],
                 feed_dict={
-                    self.s_: batch_memory[:, -self.n_features:],  # fixed params
-                    self.s: batch_memory[:, :self.n_features],  # newest params
+                    self.s_: batch_memory[:, -self.n_features:],  # fixed params  初始化S_为经验回放
+                    self.s: batch_memory[:, :self.n_features],  # newest params  同上
                 })
 
         # 下面这几步十分重要. q_next, q_eval 包含所有 action 的值,
@@ -238,7 +238,7 @@ class DeepQNetwork:
         # train eval network 训练eval_net
         _, self.cost = self.sess.run([self._train_op, self.loss],
                                      feed_dict={self.s: batch_memory[:, :self.n_features],
-                                                self.q_target: q_target})
+                                                self.q_target: q_target})  #重新训练下
         self.cost_his.append(self.cost)
 
         # increasing epsilon，递增了epsilon值来减少探索性（随机性）
