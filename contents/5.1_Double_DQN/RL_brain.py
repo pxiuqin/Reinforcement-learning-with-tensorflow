@@ -95,6 +95,7 @@ class DoubleDQN:
             self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer)
 
         with tf.variable_scope('loss'):
+            #给出一个loss：(yj−Q(ϕ(Sj),Aj,w))的平方
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
         with tf.variable_scope('train'):
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
@@ -144,8 +145,8 @@ class DoubleDQN:
         # 这里需要计算q_eval4next是根据经验池中下一时刻状态s'输入到eval-net计算得到的q值，这个q值主要用来选择动作
         q_next, q_eval4next = self.sess.run(
             [self.q_next, self.q_eval],
-            feed_dict={self.s_: batch_memory[:, -self.n_features:],    # next observation
-                       self.s: batch_memory[:, -self.n_features:]})    # next observation
+            feed_dict={self.s_: batch_memory[:, -self.n_features:],    # next observation  获取最后几个特征
+                       self.s: batch_memory[:, -self.n_features:]})    # next observation  通过q_eval完成选择动作
         q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features]})  #计算一个经验值q_eval的值
 
         q_target = q_eval.copy()  #赋值

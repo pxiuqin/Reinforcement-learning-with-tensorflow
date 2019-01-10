@@ -6,6 +6,11 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 Tensorflow: 1.0
 gym: 0.8.0
+
+回忆下之前的DQN算法，我们仅仅只保存和环境交互得到的样本状态，动作，奖励等数据，没有优先级这个说法。
+加入了优先级
+
+使用到一个具体的SumTree树结构
 """
 
 import numpy as np
@@ -101,11 +106,12 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
         self.tree = SumTree(capacity)
 
     def store(self, transition):
-        max_p = np.max(self.tree.tree[-self.tree.capacity:])
-        if max_p == 0:
+        max_p = np.max(self.tree.tree[-self.tree.capacity:])  #找到优先级最高的
+        if max_p == 0:   #如果为0，设置一个默认值
             max_p = self.abs_err_upper
-        self.tree.add(max_p, transition)   # set the max p for new p
+        self.tree.add(max_p, transition)   # set the max p for new p，添加那个优先级
 
+    #采样
     def sample(self, n):
         b_idx, b_memory, ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, self.tree.data[0].size)), np.empty((n, 1))
         pri_seg = self.tree.total_p / n       # priority segment
@@ -195,7 +201,7 @@ class DQNPrioritizedReplay:
             return out
 
         # ------------------ build evaluate_net ------------------
-        self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
+        self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input,输入状态
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         if self.prioritized:
             self.ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
@@ -209,6 +215,7 @@ class DQNPrioritizedReplay:
         with tf.variable_scope('loss'):
             if self.prioritized:
                 self.abs_errors = tf.reduce_sum(tf.abs(self.q_target - self.q_eval), axis=1)    # for updating Sumtree
+                #给出一个权重：wj(yj−Q(ϕ(Sj),Aj,w))的平方
                 self.loss = tf.reduce_mean(self.ISWeights * tf.squared_difference(self.q_target, self.q_eval))
             else:
                 self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
@@ -223,8 +230,8 @@ class DQNPrioritizedReplay:
 
     def store_transition(self, s, a, r, s_):
         if self.prioritized:    # prioritized replay
-            transition = np.hstack((s, [a, r], s_))
-            self.memory.store(transition)    # have high priority for newly arrived transition
+            transition = np.hstack((s, [a, r], s_))  #完成记忆生成
+            self.memory.store(transition)    # have high priority for newly arrived transition，转换空间
         else:       # random replay
             if not hasattr(self, 'memory_counter'):
                 self.memory_counter = 0
@@ -269,7 +276,7 @@ class DQNPrioritizedReplay:
             _, abs_errors, self.cost = self.sess.run([self._train_op, self.abs_errors, self.loss],
                                          feed_dict={self.s: batch_memory[:, :self.n_features],
                                                     self.q_target: q_target,
-                                                    self.ISWeights: ISWeights})
+                                                    self.ISWeights: ISWeights})  #给定一个权值
             self.memory.batch_update(tree_idx, abs_errors)     # update priority
         else:
             _, self.cost = self.sess.run([self._train_op, self.loss],

@@ -65,10 +65,10 @@ def train(RL):
         total_steps += 1
     return RL.q
 
-q_natural = train(natural_DQN)
+#q_natural = train(natural_DQN)
 q_double = train(double_DQN)
 
-plt.plot(np.array(q_natural), c='r', label='natural')
+#plt.plot(np.array(q_natural), c='r', label='natural')
 plt.plot(np.array(q_double), c='b', label='double')
 plt.legend(loc='best')
 plt.ylabel('Q eval')
