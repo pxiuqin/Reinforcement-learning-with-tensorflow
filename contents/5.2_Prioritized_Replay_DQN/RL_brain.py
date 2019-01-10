@@ -7,6 +7,8 @@ Using:
 Tensorflow: 1.0
 gym: 0.8.0
 
+参考论文：PRIORITIZED EXPERIENCE REPLAY.pdf
+
 回忆下之前的DQN算法，我们仅仅只保存和环境交互得到的样本状态，动作，奖励等数据，没有优先级这个说法。
 加入了优先级
 

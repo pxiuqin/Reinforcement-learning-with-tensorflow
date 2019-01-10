@@ -7,6 +7,8 @@ Using:
 Tensorflow: 1.0
 gym: 0.8.0
 
+参考论文：Deep Reinforcement Learning with Double Q-learning.pdf
+
 Double_DQN:
 
 其他情况和DNQ一致，原因是估值太高，需要通过两个网络来完成评估
