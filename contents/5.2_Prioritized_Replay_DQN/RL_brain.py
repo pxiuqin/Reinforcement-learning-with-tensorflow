@@ -33,10 +33,10 @@ class SumTree(object):
 
     def __init__(self, capacity):
         self.capacity = capacity  # for all priority values
-        self.tree = np.zeros(2 * capacity - 1)
+        self.tree = np.zeros(2 * capacity - 1)   #给定树的大小，一个sumTree的点和
         # [--------------Parent nodes-------------][-------leaves to recode priority-------]
         #             size: capacity - 1                       size: capacity
-        self.data = np.zeros(capacity, dtype=object)  # for all transitions
+        self.data = np.zeros(capacity, dtype=object)  # for all transitions 都记录到了叶子节点中
         # [--------------data frame-------------]
         #             size: capacity
 
@@ -45,7 +45,9 @@ class SumTree(object):
         self.data[self.data_pointer] = data  # update data_frame
         self.update(tree_idx, p)  # update tree_frame
 
-        self.data_pointer += 1
+        self.data_pointer += 1  # 数据点增加
+
+        #完成一轮后要重新开始添到capacity对应的节点中
         if self.data_pointer >= self.capacity:  # replace when exceed the capacity
             self.data_pointer = 0
 
@@ -55,7 +57,7 @@ class SumTree(object):
         # then propagate the change through tree
         while tree_idx != 0:    # this method is faster than the recursive loop in the reference code
             tree_idx = (tree_idx - 1) // 2
-            self.tree[tree_idx] += change
+            self.tree[tree_idx] += change  #sumTree
 
     def get_leaf(self, v):
         """
@@ -73,10 +75,10 @@ class SumTree(object):
         """
         parent_idx = 0
         while True:     # the while loop is faster than the method in the reference code
-            cl_idx = 2 * parent_idx + 1         # this leaf's left and right kids
-            cr_idx = cl_idx + 1
+            cl_idx = 2 * parent_idx + 1         # this leaf's left and right kids,如何表示左子节点位置
+            cr_idx = cl_idx + 1   #如何表示父节点的子节点右节点位置
             if cl_idx >= len(self.tree):        # reach bottom, end search
-                leaf_idx = parent_idx
+                leaf_idx = parent_idx   #到达bottom结束search
                 break
             else:       # downward search, always search for a higher priority node
                 if v <= self.tree[cl_idx]:
@@ -108,7 +110,7 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
         self.tree = SumTree(capacity)
 
     def store(self, transition):
-        max_p = np.max(self.tree.tree[-self.tree.capacity:])  #找到优先级最高的
+        max_p = np.max(self.tree.tree[-self.tree.capacity:])  #找到优先级最高的那个位置
         if max_p == 0:   #如果为0，设置一个默认值
             max_p = self.abs_err_upper
         self.tree.add(max_p, transition)   # set the max p for new p，添加那个优先级
@@ -123,9 +125,9 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
         for i in range(n):
             a, b = pri_seg * i, pri_seg * (i + 1)
             v = np.random.uniform(a, b)
-            idx, p, data = self.tree.get_leaf(v)
-            prob = p / self.tree.total_p
-            ISWeights[i, 0] = np.power(prob/min_prob, -self.beta)
+            idx, p, data = self.tree.get_leaf(v)   #获取叶子节点
+            prob = p / self.tree.total_p   #给出一个比例
+            ISWeights[i, 0] = np.power(prob/min_prob, -self.beta)   #权重计算IS(importanc sampling) wj = (N·P(j))/maxiwi
             b_idx[i], b_memory[i, :] = idx, data
         return b_idx, b_memory, ISWeights
 
