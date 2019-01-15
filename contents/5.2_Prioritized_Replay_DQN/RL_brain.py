@@ -247,6 +247,7 @@ class DQNPrioritizedReplay:
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
         if np.random.uniform() < self.epsilon:
+            #给定状态通过价值网络来评估出新的动作
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
         else:
