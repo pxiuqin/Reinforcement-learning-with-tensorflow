@@ -34,7 +34,7 @@ for i_episode in range(10):
 
         action = RL.choose_action(observation)
 
-        observation_, reward, done, info = env.step(action)
+        observation_, reward, done, info = env.step(action)  #给定一步后完成返回值
 
         position, velocity = observation_
 
@@ -43,7 +43,7 @@ for i_episode in range(10):
 
         RL.store_transition(observation, action, reward, observation_)
 
-        if total_steps > 1000:
+        if total_steps > 1000:   #给定1000步经验后开始学习
             RL.learn()
 
         ep_r += reward

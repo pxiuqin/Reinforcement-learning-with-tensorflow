@@ -8,6 +8,8 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 Tensorflow: 1.0
 gym: 0.8.0
+
+和之前实现的一样
 """
 
 import numpy as np
@@ -112,7 +114,7 @@ class DeepQNetwork:
         if not hasattr(self, 'memory_counter'):
             self.memory_counter = 0
 
-        transition = np.hstack((s, [a, r], s_))
+        transition = np.hstack((s, [a, r], s_))    #给定转换过程
 
         # replace the old memory with new memory
         index = self.memory_counter % self.memory_size
@@ -124,7 +126,7 @@ class DeepQNetwork:
         # to have batch dimension when feed into tf placeholder
         observation = observation[np.newaxis, :]
 
-        if np.random.uniform() < self.epsilon:
+        if np.random.uniform() < self.epsilon:   #增加探索
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
@@ -145,6 +147,7 @@ class DeepQNetwork:
             sample_index = np.random.choice(self.memory_counter, size=self.batch_size)
         batch_memory = self.memory[sample_index, :]
 
+        #给定q_next和q_eval
         q_next, q_eval = self.sess.run(
             [self.q_next, self.q_eval],
             feed_dict={

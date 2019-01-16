@@ -4,6 +4,8 @@ Deep Q network,
 Using:
 Tensorflow: 1.0
 gym: 0.7.3
+
+摇杆小实验
 """
 
 
@@ -39,9 +41,9 @@ for i_episode in range(100):
         observation_, reward, done, info = env.step(action)
 
         # the smaller theta and closer to center the better
-        x, x_dot, theta, theta_dot = observation_
-        r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8
-        r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5
+        x, x_dot, theta, theta_dot = observation_   #给定了环境点
+        r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8  #给那个一个x值的评价
+        r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5   #给定一个弧度的评价
         reward = r1 + r2
 
         RL.store_transition(observation, action, reward, observation_)
