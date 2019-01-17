@@ -14,6 +14,7 @@ import gym
 from RL_brain import PolicyGradient
 import matplotlib.pyplot as plt
 
+#给定一个奖励的阈值
 DISPLAY_REWARD_THRESHOLD = 400  # renders environment if total episode reward is greater then this threshold
 RENDER = False  # rendering wastes time
 
@@ -30,7 +31,7 @@ RL = PolicyGradient(
     n_actions=env.action_space.n,
     n_features=env.observation_space.shape[0],
     learning_rate=0.02,
-    reward_decay=0.99,
+    reward_decay=0.99,  #给定折扣因子
     # output_graph=True,
 )
 
@@ -45,16 +46,16 @@ for i_episode in range(3000):
 
         observation_, reward, done, info = env.step(action)
 
-        RL.store_transition(observation, action, reward)
+        RL.store_transition(observation, action, reward)  #存储转换
 
-        if done:
+        if done:   #找到最终的动作
             ep_rs_sum = sum(RL.ep_rs)
 
             if 'running_reward' not in globals():
                 running_reward = ep_rs_sum
             else:
-                running_reward = running_reward * 0.99 + ep_rs_sum * 0.01
-            if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True     # rendering
+                running_reward = running_reward * 0.99 + ep_rs_sum * 0.01   #折扣=历史总和*0.01+当前奖励*0.99
+            if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True     # rendering后，比较下reward阈值
             print("episode:", i_episode, "  reward:", int(running_reward))
 
             vt = RL.learn()
