@@ -8,6 +8,12 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 tensorflow 1.0
 gym 0.8.0
+
+Actor-Critic算法
+价值函数近似的强化学习算法用于估计状态-动作价值 q(s,a)。
+策略梯度算法引入价值函数近似提供价值是一个很好的思路。
+这时候，算法分为两个部分：Actor 和 Critic。Actor 更新策略， Critic 更新价值。
+Critic 就可以用之前介绍的 SARSA 或者 QLearning 算法。
 """
 
 import numpy as np
@@ -34,7 +40,7 @@ env = env.unwrapped
 N_F = env.observation_space.shape[0]
 N_A = env.action_space.n
 
-
+#创建一个演员类来完成策略的学习
 class Actor(object):
     def __init__(self, sess, n_features, n_actions, lr=0.001):
         self.sess = sess
@@ -43,6 +49,7 @@ class Actor(object):
         self.a = tf.placeholder(tf.int32, None, "act")
         self.td_error = tf.placeholder(tf.float32, None, "td_error")  # TD_error
 
+        #输入一个状态，输出一个动作的概率值
         with tf.variable_scope('Actor'):
             l1 = tf.layers.dense(
                 inputs=self.s,
@@ -63,13 +70,13 @@ class Actor(object):
             )
 
         with tf.variable_scope('exp_v'):
-            log_prob = tf.log(self.acts_prob[0, self.a])
+            log_prob = tf.log(self.acts_prob[0, self.a])   #log(p(s,a))
             self.exp_v = tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided loss
 
         with tf.variable_scope('train'):
             self.train_op = tf.train.AdamOptimizer(lr).minimize(-self.exp_v)  # minimize(-exp_v) = maximize(exp_v)
 
-    def learn(self, s, a, td):
+    def learn(self, s, a, td):  #td来之Critic中的计算结果
         s = s[np.newaxis, :]
         feed_dict = {self.s: s, self.a: a, self.td_error: td}
         _, exp_v = self.sess.run([self.train_op, self.exp_v], feed_dict)
@@ -80,7 +87,7 @@ class Actor(object):
         probs = self.sess.run(self.acts_prob, {self.s: s})   # get probabilities for all actions
         return np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())   # return a int
 
-
+#创建一个评论来完成价值的学习
 class Critic(object):
     def __init__(self, sess, n_features, lr=0.01):
         self.sess = sess
@@ -111,7 +118,7 @@ class Critic(object):
             )
 
         with tf.variable_scope('squared_TD_error'):
-            self.td_error = self.r + GAMMA * self.v_ - self.v
+            self.td_error = self.r + GAMMA * self.v_ - self.v   #td_error=R + gamma*Vt+1 - Vt
             self.loss = tf.square(self.td_error)    # TD_error = (r+gamma*V_next) - V_eval
         with tf.variable_scope('train'):
             self.train_op = tf.train.AdamOptimizer(lr).minimize(self.loss)
@@ -142,7 +149,7 @@ for i_episode in range(MAX_EPISODE):
     while True:
         if RENDER: env.render()
 
-        a = actor.choose_action(s)
+        a = actor.choose_action(s)   #通过状态来选择一个动作
 
         s_, r, done, info = env.step(a)
 
@@ -150,8 +157,8 @@ for i_episode in range(MAX_EPISODE):
 
         track_r.append(r)
 
-        td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]
-        actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]
+        td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]   价值学习来产生梯度
+        actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]   策略学习产生的梯度
 
         s = s_
         t += 1

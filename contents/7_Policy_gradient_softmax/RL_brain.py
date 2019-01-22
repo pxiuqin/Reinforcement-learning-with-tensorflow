@@ -13,6 +13,12 @@ gym: 0.8.0
 使用策略梯度来实现小摇杆和小汽车游戏的历史
 
 策略梯度查看网址：http://www.algorithmdog.com/rl-policy-gradient
+
+策略梯度是动作概率为基础的一类强化学习实现
+
+以下是描述了一个使用蒙特卡罗策略梯度的实现，该方法是基于一个状态和奖励序列：
+s1,a1,r1,…..,sT,aT,rT
+在第 t 时刻，我们让 gt=rt+γrt+1+... 等于 q(st,a) ，从而求解策略梯度优化问题
 """
 
 import numpy as np

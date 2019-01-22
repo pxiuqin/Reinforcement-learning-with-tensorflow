@@ -10,6 +10,8 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 tensorflow r1.3
 gym 0.8.0
+
+利用一个Pendulum游戏来实现
 """
 
 import tensorflow as tf
