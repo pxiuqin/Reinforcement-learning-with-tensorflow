@@ -14,6 +14,11 @@ Actor-Critic算法
 策略梯度算法引入价值函数近似提供价值是一个很好的思路。
 这时候，算法分为两个部分：Actor 和 Critic。Actor 更新策略， Critic 更新价值。
 Critic 就可以用之前介绍的 SARSA 或者 QLearning 算法。
+
+Actor Critic 方法的优势: 可以进行单步更新, 比传统的 Policy Gradient 要快（回合结束更新）.
+Actor Critic 方法的劣势: 取决于 Critic 的价值判断, 但是 Critic 难收敛, 再加上 Actor 的更新, 就更难收敛.
+为了解决收敛问题, Google Deepmind 提出了 Actor Critic 升级版 Deep Deterministic Policy Gradient. 后者融合了 DQN 的优势, 解决了收敛难的问题.
+
 """
 
 import numpy as np
@@ -69,11 +74,12 @@ class Actor(object):
                 name='acts_prob'
             )
 
+        #动作期望
         with tf.variable_scope('exp_v'):
             log_prob = tf.log(self.acts_prob[0, self.a])   #log(p(s,a))
             self.exp_v = tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided loss
 
-        with tf.variable_scope('train'):
+        with tf.variable_scope('train'):  #最大期望
             self.train_op = tf.train.AdamOptimizer(lr).minimize(-self.exp_v)  # minimize(-exp_v) = maximize(exp_v)
 
     def learn(self, s, a, td):  #td来之Critic中的计算结果
@@ -117,7 +123,7 @@ class Critic(object):
                 name='V'
             )
 
-        with tf.variable_scope('squared_TD_error'):
+        with tf.variable_scope('squared_TD_error'):  #td_error
             self.td_error = self.r + GAMMA * self.v_ - self.v   #td_error=R + gamma*Vt+1 - Vt
             self.loss = tf.square(self.td_error)    # TD_error = (r+gamma*V_next) - V_eval
         with tf.variable_scope('train'):
