@@ -17,6 +17,8 @@ Critic网络的输入为state和action，输出为Q值
 来源：
 Actor-Critic收敛慢的问题所以Deepmind 提出了 Actor Critic 升级版 Deep Deterministic Policy Gradient，
 后者融合了 DQN 的优势, 解决了收敛难的问题。
+
+参考：https://morvanzhou.github.io/tutorials/machine-learning/reinforcement-learning/6-2-DDPG/
 """
 
 import tensorflow as tf
@@ -59,10 +61,10 @@ class Actor(object):
         self.t_replace_counter = 0
 
         with tf.variable_scope('Actor'):
-            # input s, output a 输入状态，输出动作
+            # input s, output a 输入状态，输出动作，这个网络用于及时更新参数
             self.a = self._build_net(S, scope='eval_net', trainable=True)
 
-            # input s_, output a, get a_ for critic 输入s_状态，输出动作
+            # input s_, output a, get a_ for critic 输入s_状态，输出动作，这个网络不及时更新参数，用于预测Critic中Q_target中的action
             self.a_ = self._build_net(S_, scope='target_net', trainable=False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval_net')   #eval_net
@@ -102,21 +104,23 @@ class Actor(object):
         s = s[np.newaxis, :]    # single state
         return self.sess.run(self.a, feed_dict={S: s})[0]  # single action，给定一个单一状态
 
+    #梯度的计算
     def add_grad_to_graph(self, a_grads):
+        #这是在计算 (dQ/da) * (da/dparams)
         with tf.variable_scope('policy_grads'):
-            # ys = policy;
-            # xs = policy's parameters;
+            # ys = policy;  计算ys对于xs的梯度
+            # xs = policy's parameters;   这里xs是eval_net
             # a_grads = the gradients of the policy to get more Q
             # tf.gradients will calculate dys/dxs with a initial gradients for ys, so this is dq/da * da/dparams
             self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
 
         with tf.variable_scope('A_train'):
-            opt = tf.train.AdamOptimizer(-self.lr)  # (- learning rate) for ascent policy
-            self.train_op = opt.apply_gradients(zip(self.policy_grads, self.e_params))
+            opt = tf.train.AdamOptimizer(-self.lr)  # (- learning rate) for ascent policy  负的学习率为了使我们计算的梯度往上升, 和 Policy Gradient 中的方式一个性质
+            self.train_op = opt.apply_gradients(zip(self.policy_grads, self.e_params))   #这里完成对eval_net的参数更新
 
 
 ###############################  Critic  ####################################
-
+#Critic更新的方法借鉴了Double Q-Learning的方法
 class Critic(object):
     def __init__(self, sess, state_dim, action_dim, learning_rate, gamma, replacement, a, a_):
         self.sess = sess
@@ -127,18 +131,19 @@ class Critic(object):
         self.replacement = replacement
 
         with tf.variable_scope('Critic'):
-            # Input (s, a), output q
-            self.a = a
+            # Input (s, a), output q，这个网络用于即使更新参数
+            self.a = a   # 这个a是来自Actor的, 但是self.a在更新Critic的时候是之前选择的a却不是来自Actor的a.
             self.q = self._build_net(S, self.a, 'eval_net', trainable=True)
 
-            # Input (s_, a_), output q_ for q_target
+            # Input (s_, a_), output q_ for q_target， 这个网络不及时更新参数, 用于给出Actor更新参数时的Gradient ascent强度
             self.q_ = self._build_net(S_, a_, 'target_net', trainable=False)    # target_q is based on a_ from Actor's target_net
 
+            #给定了两个网络
             self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_net')
             self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_net')
 
         with tf.variable_scope('target_q'):
-            self.target_q = R + self.gamma * self.q_   #给定target_q
+            self.target_q = R + self.gamma * self.q_   #给定target_q， 这个self.q_根据Actor的target_net来的
 
         with tf.variable_scope('TD_error'):
             self.loss = tf.reduce_mean(tf.squared_difference(self.target_q, self.q))     #差平方后求均值
@@ -146,7 +151,8 @@ class Critic(object):
         with tf.variable_scope('C_train'):
             self.train_op = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
 
-        with tf.variable_scope('a_grad'):
+        #这里是传递给Actor计算梯度时使用
+        with tf.variable_scope('a_grad'):   #给出梯度下降的强度，这里的a是Actor根据状态s计算出来的
             self.a_grads = tf.gradients(self.q, a)[0]   # tensor of gradients of each sample (None, a_dim)
 
         if self.replacement['name'] == 'hard':
@@ -229,9 +235,9 @@ sess = tf.Session()
 # They are actually connected to each other, details can be seen in tensorboard or in this picture:
 actor = Actor(sess, action_dim, action_bound, LR_A, REPLACEMENT)   #构建actor
 critic = Critic(sess, state_dim, action_dim, LR_C, GAMMA, REPLACEMENT, actor.a, actor.a_)  #构建critic
-actor.add_grad_to_graph(critic.a_grads)
+actor.add_grad_to_graph(critic.a_grads)   #获取critic的价值判断梯度后添加到actor中计算最终梯度
 
-sess.run(tf.global_variables_initializer())
+sess.run(tf.global_variables_initializer())  #tf初始化变量
 
 M = Memory(MEMORY_CAPACITY, dims=2 * state_dim + action_dim + 1)   #dims给定两个状态和一个动作一个reward
 

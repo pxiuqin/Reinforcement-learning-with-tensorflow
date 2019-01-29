@@ -62,7 +62,7 @@ class DDPG(object):
         self.soft_replace = [tf.assign(t, (1 - TAU) * t + TAU * e)
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
-        q_target = self.R + GAMMA * q_
+        q_target = self.R + GAMMA * q_   #target的值
         # in the feed_dic for the td_error, the self.a should change to actions in memory
         td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
         self.ctrain = tf.train.AdamOptimizer(LR_C).minimize(td_error, var_list=self.ce_params)
@@ -95,20 +95,22 @@ class DDPG(object):
         self.memory[index, :] = transition
         self.pointer += 1
 
+    #构建actor
     def _build_a(self, s, scope, trainable):
         with tf.variable_scope(scope):
-            net = tf.layers.dense(s, 30, activation=tf.nn.relu, name='l1', trainable=trainable)
-            a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
+            net = tf.layers.dense(s, 30, activation=tf.nn.relu, name='l1', trainable=trainable)  #定义一个去全连接网作为第一层
+            a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)  #创建第二层网络
             return tf.multiply(a, self.a_bound, name='scaled_a')
 
+    #构建critic
     def _build_c(self, s, a, scope, trainable):
         with tf.variable_scope(scope):
             n_l1 = 30
-            w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
-            w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)
-            b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)
+            w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)  #状态权重
+            w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)  #动作权重
+            b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)  #添加一个偏移
             net = tf.nn.relu(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
-            return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)
+            return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)  输出的是概率
 
 ###############################  training  ####################################
 
@@ -118,7 +120,7 @@ env.seed(1)
 
 s_dim = env.observation_space.shape[0]
 a_dim = env.action_space.shape[0]
-a_bound = env.action_space.high
+a_bound = env.action_space.high  #动作空间数
 
 ddpg = DDPG(a_dim, s_dim, a_bound)
 
