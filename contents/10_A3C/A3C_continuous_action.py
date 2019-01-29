@@ -8,6 +8,10 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 tensorflow 1.8.0
 gym 0.10.5
+
+A3C 的算法实际上就是将Actor-Critic放在了多个线程中进行同步训练.
+可以想象成几个人同时在玩一样的游戏, 而他们玩游戏的经验都会同步上传到一个中央大脑.
+然后他们又从中央大脑中获取最新的玩游戏方法.
 """
 
 import multiprocessing
@@ -22,7 +26,7 @@ import matplotlib.pyplot as plt
 GAME = 'Pendulum-v0'
 OUTPUT_GRAPH = True
 LOG_DIR = './log'
-N_WORKERS = multiprocessing.cpu_count()
+N_WORKERS = multiprocessing.cpu_count()   #按照cpu数量来给动并行工作线程
 MAX_EP_STEP = 200
 MAX_GLOBAL_EP = 2000
 GLOBAL_NET_SCOPE = 'Global_Net'
@@ -40,10 +44,11 @@ N_S = env.observation_space.shape[0]
 N_A = env.action_space.shape[0]
 A_BOUND = [env.action_space.low, env.action_space.high]
 
-
+#给定的Actor和Critic网络，相结合来生成global_net
 class ACNet(object):
     def __init__(self, scope, globalAC=None):
 
+        #判断当下网络是local还是global
         if scope == GLOBAL_NET_SCOPE:   # get global network
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
@@ -57,7 +62,7 @@ class ACNet(object):
                 mu, sigma, self.v, self.a_params, self.c_params = self._build_net(scope)
 
                 td = tf.subtract(self.v_target, self.v, name='TD_error')
-                with tf.name_scope('c_loss'):
+                with tf.name_scope('c_loss'):  #计算critic的loss
                     self.c_loss = tf.reduce_mean(tf.square(td))
 
                 with tf.name_scope('wrap_a_out'):
@@ -65,7 +70,7 @@ class ACNet(object):
 
                 normal_dist = tf.distributions.Normal(mu, sigma)
 
-                with tf.name_scope('a_loss'):
+                with tf.name_scope('a_loss'):  #计算actor的loss
                     log_prob = normal_dist.log_prob(self.a_his)
                     exp_v = log_prob * tf.stop_gradient(td)
                     entropy = normal_dist.entropy()  # encourage exploration
@@ -74,15 +79,15 @@ class ACNet(object):
 
                 with tf.name_scope('choose_a'):  # use local params to choose action
                     self.A = tf.clip_by_value(tf.squeeze(normal_dist.sample(1), axis=[0, 1]), A_BOUND[0], A_BOUND[1])
-                with tf.name_scope('local_grad'):
+                with tf.name_scope('local_grad'):  #通过loss来完成梯度的生成
                     self.a_grads = tf.gradients(self.a_loss, self.a_params)
                     self.c_grads = tf.gradients(self.c_loss, self.c_params)
 
             with tf.name_scope('sync'):
-                with tf.name_scope('pull'):
+                with tf.name_scope('pull'):   #获取global的参数
                     self.pull_a_params_op = [l_p.assign(g_p) for l_p, g_p in zip(self.a_params, globalAC.a_params)]
                     self.pull_c_params_op = [l_p.assign(g_p) for l_p, g_p in zip(self.c_params, globalAC.c_params)]
-                with tf.name_scope('push'):
+                with tf.name_scope('push'):   #更新global的参数
                     self.update_a_op = OPT_A.apply_gradients(zip(self.a_grads, globalAC.a_params))
                     self.update_c_op = OPT_C.apply_gradients(zip(self.c_grads, globalAC.c_params))
 
@@ -90,7 +95,10 @@ class ACNet(object):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):
             l_a = tf.layers.dense(self.s, 200, tf.nn.relu6, kernel_initializer=w_init, name='la')
+
+            #给定输出的均值（期望）
             mu = tf.layers.dense(l_a, N_A, tf.nn.tanh, kernel_initializer=w_init, name='mu')
+            #给定输出的方差，给定期望和方差的目的是为了到正太分布中去选择动作
             sigma = tf.layers.dense(l_a, N_A, tf.nn.softplus, kernel_initializer=w_init, name='sigma')
         with tf.variable_scope('critic'):
             l_c = tf.layers.dense(self.s, 100, tf.nn.relu6, kernel_initializer=w_init, name='lc')
@@ -99,20 +107,20 @@ class ACNet(object):
         c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/critic')
         return mu, sigma, v, a_params, c_params
 
-    def update_global(self, feed_dict):  # run by a local
+    def update_global(self, feed_dict):  # run by a local， 更新global_net参数
         SESS.run([self.update_a_op, self.update_c_op], feed_dict)  # local grads applies to global net
 
-    def pull_global(self):  # run by a local
+    def pull_global(self):  # run by a local，获取新的整体的参数
         SESS.run([self.pull_a_params_op, self.pull_c_params_op])
 
     def choose_action(self, s):  # run by a local
         s = s[np.newaxis, :]
         return SESS.run(self.A, {self.s: s})
 
-
+#给定一个工作线程
 class Worker(object):
     def __init__(self, name, globalAC):
-        self.env = gym.make(GAME).unwrapped
+        self.env = gym.make(GAME).unwrapped  #创建一个gym相关的游戏
         self.name = name
         self.AC = ACNet(name, globalAC)
 
@@ -123,11 +131,13 @@ class Worker(object):
         while not COORD.should_stop() and GLOBAL_EP < MAX_GLOBAL_EP:
             s = self.env.reset()
             ep_r = 0
+
+            #完成多个回合
             for ep_t in range(MAX_EP_STEP):
                 # if self.name == 'W_0':
                 #     self.env.render()
                 a = self.AC.choose_action(s)
-                s_, r, done, info = self.env.step(a)
+                s_, r, done, info = self.env.step(a)  #返回下一步信息
                 done = True if ep_t == MAX_EP_STEP - 1 else False
 
                 ep_r += r
@@ -182,7 +192,7 @@ if __name__ == "__main__":
         # Create worker
         for i in range(N_WORKERS):
             i_name = 'W_%i' % i   # worker name
-            workers.append(Worker(i_name, GLOBAL_AC))
+            workers.append(Worker(i_name, GLOBAL_AC))    #创建一个新worker
 
     COORD = tf.train.Coordinator()
     SESS.run(tf.global_variables_initializer())
