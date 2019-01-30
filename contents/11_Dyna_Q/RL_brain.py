@@ -3,6 +3,9 @@ This part of code is the Dyna-Q learning brain, which is a brain of the agent.
 All decisions and learning processes are made in here.
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
+
+主要是使用Q-Learning来解决连续动作，
+使用针对Actor-Critic中Critic中给定Actor一个更好的选择，而不是只告诉好和不好
 """
 
 import numpy as np

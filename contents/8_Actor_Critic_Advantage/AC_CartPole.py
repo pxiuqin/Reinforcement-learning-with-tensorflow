@@ -124,6 +124,9 @@ class Critic(object):
             )
 
         with tf.variable_scope('squared_TD_error'):  #td_error
+            #原本是Q(St,At)-V(St)
+            #因为 (St,At)=E(Rt+V(St+1))
+            #所以 Rt+V(St+1)-V(St)
             self.td_error = self.r + GAMMA * self.v_ - self.v   #td_error=R + gamma*Vt+1 - Vt
             self.loss = tf.square(self.td_error)    # TD_error = (r+gamma*V_next) - V_eval
         with tf.variable_scope('train'):

@@ -42,7 +42,7 @@ env = gym.make(GAME)
 
 N_S = env.observation_space.shape[0]
 N_A = env.action_space.shape[0]
-A_BOUND = [env.action_space.low, env.action_space.high]
+A_BOUND = [env.action_space.low, env.action_space.high]  #给定空间
 
 #给定的Actor和Critic网络，相结合来生成global_net
 class ACNet(object):
@@ -68,11 +68,12 @@ class ACNet(object):
                 with tf.name_scope('wrap_a_out'):
                     mu, sigma = mu * A_BOUND[1], sigma + 1e-4
 
-                normal_dist = tf.distributions.Normal(mu, sigma)
+                normal_dist = tf.distributions.Normal(mu, sigma)  #正态分布
 
+                #动作选择是通过给定分布的概率密度来完成的
                 with tf.name_scope('a_loss'):  #计算actor的loss
-                    log_prob = normal_dist.log_prob(self.a_his)
-                    exp_v = log_prob * tf.stop_gradient(td)
+                    log_prob = normal_dist.log_prob(self.a_his)  #获取概率密度函数
+                    exp_v = log_prob * tf.stop_gradient(td)  #给定bp停止点
                     entropy = normal_dist.entropy()  # encourage exploration
                     self.exp_v = ENTROPY_BETA * entropy + exp_v
                     self.a_loss = tf.reduce_mean(-self.exp_v)

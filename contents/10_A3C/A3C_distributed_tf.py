@@ -99,7 +99,7 @@ def work(job_name, task_index, global_ep, lock, r_queue, global_running_r):
         "ps": ['localhost:2220', 'localhost:2221',],
         "worker": ['localhost:2222', 'localhost:2223', 'localhost:2224', 'localhost:2225',]
     })
-    server = tf.train.Server(cluster, job_name=job_name, task_index=task_index)
+    server = tf.train.Server(cluster, job_name=job_name, task_index=task_index)  #创建集群工作服务
     if job_name == 'ps':
         print('Start Parameter Sever: ', task_index)
         server.join()

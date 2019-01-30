@@ -42,6 +42,7 @@ N_A = env.action_space.n
 class ACNet(object):
     def __init__(self, scope, globalAC=None):
 
+        #判断是否是global_net
         if scope == GLOBAL_NET_SCOPE:   # get global network
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
@@ -54,15 +55,16 @@ class ACNet(object):
 
                 self.a_prob, self.v, self.a_params, self.c_params = self._build_net(scope)
 
-                td = tf.subtract(self.v_target, self.v, name='TD_error')
+                td = tf.subtract(self.v_target, self.v, name='TD_error')   #给出差值
                 with tf.name_scope('c_loss'):
-                    self.c_loss = tf.reduce_mean(tf.square(td))
+                    self.c_loss = tf.reduce_mean(tf.square(td))   #求损失
 
                 with tf.name_scope('a_loss'):
+                    #给定计算概率密度
                     log_prob = tf.reduce_sum(tf.log(self.a_prob + 1e-5) * tf.one_hot(self.a_his, N_A, dtype=tf.float32), axis=1, keep_dims=True)
                     exp_v = log_prob * tf.stop_gradient(td)
                     entropy = -tf.reduce_sum(self.a_prob * tf.log(self.a_prob + 1e-5),
-                                             axis=1, keep_dims=True)  # encourage exploration
+                                             axis=1, keep_dims=True)  # encourage exploration  计算熵
                     self.exp_v = ENTROPY_BETA * entropy + exp_v
                     self.a_loss = tf.reduce_mean(-self.exp_v)
 
