@@ -25,7 +25,7 @@ def update():
             s_, r, done = env.step(a)
             RL.learn(str(s), a, r, str(s_))
 
-            # use a model to output (r, s_) by inputting (s, a)
+            # use a model to output (r, s_) by inputting (s, a)  输入状态和一个动作输出其奖励和下一个状态
             # the model in dyna Q version is just like a memory replay buffer
             env_model.store_transition(str(s), a, r, s_)
             for n in range(10):     # learn 10 more times using the env_model
@@ -44,8 +44,8 @@ def update():
 
 if __name__ == "__main__":
     env = Maze()
-    RL = QLearningTable(actions=list(range(env.n_actions)))
-    env_model = EnvModel(actions=list(range(env.n_actions)))
+    RL = QLearningTable(actions=list(range(env.n_actions)))   #直接强化学习，通过环境体验来优化策略模型
+    env_model = EnvModel(actions=list(range(env.n_actions)))  #通过环境体验来优化策略和优化模型
 
     env.after(0, update)
     env.mainloop()

@@ -18,14 +18,15 @@ class QLearningTable:
         self.lr = learning_rate
         self.gamma = reward_decay
         self.epsilon = e_greedy
-        self.q_table = pd.DataFrame(columns=self.actions)
+        self.q_table = pd.DataFrame(columns=self.actions)  #使用一个dataframe来学习存储状态和动作的转换
 
     def choose_action(self, observation):
         self.check_state_exist(observation)
-        # action selection
+        # action selection  增加探索性
         if np.random.uniform() < self.epsilon:
             # choose best action
             state_action = self.q_table.ix[observation, :]
+            #随机打乱动作，然后从中选择一个
             state_action = state_action.reindex(np.random.permutation(state_action.index))     # some actions have same value
             action = state_action.argmax()
         else:
@@ -37,7 +38,7 @@ class QLearningTable:
         self.check_state_exist(s_)
         q_predict = self.q_table.ix[s, a]
         if s_ != 'terminal':
-            q_target = r + self.gamma * self.q_table.ix[s_, :].max()  # next state is not terminal
+            q_target = r + self.gamma * self.q_table.ix[s_, :].max()  # next state is not terminal  选择最大的动作
         else:
             q_target = r  # next state is terminal
         self.q_table.ix[s, a] += self.lr * (q_target - q_predict)  # update
@@ -53,7 +54,7 @@ class QLearningTable:
                 )
             )
 
-
+#定义了一个环境模型（给定状态和动作给出奖励和下一个状态）
 class EnvModel:
     """Similar to the memory buffer in DQN, you can store past experiences in here.
     Alternatively, the model can generate next state and reward signal accurately."""
@@ -62,6 +63,7 @@ class EnvModel:
         self.actions = actions
         self.database = pd.DataFrame(columns=actions, dtype=np.object)
 
+    #类似于经验回放，把转换过程存储起来
     def store_transition(self, s, a, r, s_):
         if s not in self.database.index:
             self.database = self.database.append(
@@ -73,7 +75,7 @@ class EnvModel:
         self.database.set_value(s, a, (r, s_))
 
     def sample_s_a(self):
-        s = np.random.choice(self.database.index)
+        s = np.random.choice(self.database.index) #随机给定一种状态
         a = np.random.choice(self.database.ix[s].dropna().index)    # filter out the None value
         return s, a
 
