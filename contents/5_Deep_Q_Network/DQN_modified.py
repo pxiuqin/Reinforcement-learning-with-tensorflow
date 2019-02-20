@@ -7,6 +7,15 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 
 Using:
 Tensorflow: r1.2
+
+强化学习可以按照方法学习策略来划分成基于值和基于策略两种。
+而在深度强化学习领域将深度学习与基于值的Q-Learning算法相结合产生了DQN算法，
+通过经验回放池与目标网络成功的将深度学习算法引入了强化学习算法。
+其中最具代表性分别是Q-Learning与Policy Gradient算法，
+将Q-Learning算法与深度学习相结合产生了Deep Q Network，
+而后又出现了将两种方式的优势结合在一起的更为优秀Actor Critic，DPG, DDPG，A3C，TRPO，PPO等算法。
+
+
 """
 
 import numpy as np
