@@ -73,7 +73,8 @@ class PPO(object):
         with tf.variable_scope('loss'):
             with tf.variable_scope('surrogate'):
                 # ratio = tf.exp(pi.log_prob(self.tfa) - oldpi.log_prob(self.tfa))
-                ratio = pi.prob(self.tfa) / oldpi.prob(self.tfa)  #两个分布下某个动作的概率比值
+                # ratio = pi.prob(self.tfa) / oldpi.prob(self.tfa)  #两个分布下某个动作的概率比值
+                ratio = pi.prob(self.tfa) / (oldpi.prob(self.tfa) + 1e-5)
                 surr = ratio * self.tfadv
             if METHOD['name'] == 'kl_pen':
                 self.tflam = tf.placeholder(tf.float32, None, 'lambda')

@@ -153,7 +153,8 @@ class Critic(object):
 
         #这里是传递给Actor计算梯度时使用
         with tf.variable_scope('a_grad'):   #给出梯度下降的强度，这里的a是Actor根据状态s计算出来的
-            self.a_grads = tf.gradients(self.q, a)[0]   # tensor of gradients of each sample (None, a_dim)
+            # self.a_grads = tf.gradients(self.q, a)[0]   # tensor of gradients of each sample (None, a_dim)
+            self.a_grads = tf.gradients(self.q, self.a)[0]  # tensor of gradients of each sample (None, a_dim)
 
         if self.replacement['name'] == 'hard':
             self.t_replace_counter = 0

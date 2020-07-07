@@ -1,14 +1,10 @@
 """
 A simple version of OpenAI's Proximal Policy Optimization (PPO). [https://arxiv.org/abs/1707.06347]
-
 Distributing workers in parallel to collect data, then stop worker's roll-out and train PPO on collected data.
 Restart workers once PPO is updated.
-
 The global PPO updating rule is adopted from DeepMind's paper (DPPO):
 Emergence of Locomotion Behaviours in Rich Environments (Google Deepmind): [https://arxiv.org/abs/1707.02286]
-
 View more on my tutorial website: https://morvanzhou.github.io/tutorials
-
 Dependencies:
 tensorflow 1.8.0
 gym 0.9.2
@@ -52,7 +48,7 @@ class PPONet(object):
         # actor
         self.pi, pi_params = self._build_anet('pi', trainable=True)
         oldpi, oldpi_params = self._build_anet('oldpi', trainable=False)
-        
+
         self.update_oldpi_op = [oldp.assign(p) for p, oldp in zip(pi_params, oldpi_params)]
 
         self.tfa = tf.placeholder(tf.int32, [None, ], 'action')
@@ -61,7 +57,7 @@ class PPONet(object):
         a_indices = tf.stack([tf.range(tf.shape(self.tfa)[0], dtype=tf.int32), self.tfa], axis=1)
         pi_prob = tf.gather_nd(params=self.pi, indices=a_indices)   # shape=(None, )
         oldpi_prob = tf.gather_nd(params=oldpi, indices=a_indices)  # shape=(None, )
-        ratio = pi_prob/oldpi_prob
+        ratio = pi_prob/(oldpi_prob + 1e-5)
         surr = ratio * self.tfadv                       # surrogate loss
 
         self.aloss = -tf.reduce_mean(tf.minimum(        # clipped surrogate objective
@@ -100,7 +96,7 @@ class PPONet(object):
         action = np.random.choice(range(prob_weights.shape[1]),
                                       p=prob_weights.ravel())  # select action w.r.t the actions prob
         return action
-    
+
     def get_v(self, s):
         if s.ndim < 2: s = s[np.newaxis, :]
         return self.sess.run(self.v, {self.tfs: s})[0, 0]
@@ -137,7 +133,7 @@ class Worker(object):
                         v_s_ = 0                                # end of episode
                     else:
                         v_s_ = self.ppo.get_v(s_)
-                    
+
                     discounted_r = []                           # compute discounted reward
                     for r in buffer_r[::-1]:
                         v_s_ = r + GAMMA * v_s_
@@ -154,7 +150,7 @@ class Worker(object):
                     if GLOBAL_EP >= EP_MAX:         # stop training
                         COORD.request_stop()
                         break
-        
+
                     if done: break
 
             # record reward changes, plot later
@@ -196,4 +192,3 @@ if __name__ == '__main__':
             s, r, done, info = env.step(GLOBAL_PPO.choose_action(s))
             if done:
                 break
-
